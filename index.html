@@ -1,0 +1,154 @@
+<html>
+  <div id="chartContainer1">
+  </div>
+  <div id="chartContainer">
+  </div>
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
+  <script type="text/javascript">
+
+    var svg1 = dimple.newSvg("#chartContainer1", 890, 350);
+    d3.tsv("/data/data.csv", function (data) {
+
+      // Get a unique list of dates
+      var quartiles = dimple.getUniqueValues(data, "dose_quartile");
+
+      // Set the bounds for the charts
+      var row = 0,
+          col = 0,
+          top = 25,
+          left = 60,
+          inMarg = 95,
+          width = 300,
+          height = 200,
+          totalWidth = parseFloat(svg1.attr("width"));
+
+
+      // Draw a chart for each of the 12 dates
+      // Wrap to the row above
+      if (left + ((col + 1) * (width + inMarg)) > totalWidth) {
+        row += 1;
+        col = 0;
+      }
+
+      // Filter for the month in the iteration
+      var chartData = dimple.filterData(data, "dose_quartile", ["Q1", "Q2", "Q3", "Q4"]);
+
+      // Use d3 to draw a text label for the month
+      var text = svg1
+        .append("text")
+            .attr("x", left + (col * (width + inMarg)) + (width / 2))
+            .attr("y", top + (row * (height + inMarg)) + (height / 2) + 12)
+            .style("font-family", "sans-serif")
+            .style("text-anchor", "middle")
+            .style("font-size", "28px")
+            .style("opacity", 0.2)
+
+      // Create a chart at the correct point in the trellis
+      var myChart = new dimple.chart(svg1, chartData);
+      myChart.setBounds(
+        left + (col * (width + inMarg)),
+        top + (row * (height + inMarg)),
+        width,
+        height);
+
+      // Add x and fix ordering so that all charts are the same
+      var x = myChart.addCategoryAxis("x", "hematocrit_group");
+      x.addOrderRule(["< 30%","30% - < 33%", "33% - < 36%", "36% - < 39%",">= <39%"]);
+      x.title = "Hematocrit Group";
+      // Add y and fix scale so that all charts are the same
+      var y = myChart.addMeasureAxis("y", "mortality_rate");
+      y.overrideMax = 550;
+      y.title = "Mortality Rate (%)";
+
+      // Draw the bars.  Passing null here would draw all bars with
+      // the same color.  Passing owner second colors by owner, which
+      // is normally bad practice in a bar chart but works in a trellis.
+      // Month is only passed here so that it shows in the tooltip.
+      myChart.addSeries(["dose_quartile", "hematocrit_group"], dimple.plot.bar);
+
+      myChart.setStoryboard("dose_quartile");
+      myChart.storyboard.onTick = function (e) {
+        text.text(e);
+      };
+
+      // Draw the chart
+      myChart.draw();
+
+      // Move to the next column
+      col += 1;
+
+    });
+
+    var svg = dimple.newSvg("#chartContainer", 890, 1000);
+    d3.tsv("/data/data.csv", function (data) {
+
+      // Get a unique list of dates
+      var quartiles = dimple.getUniqueValues(data, "dose_quartile");
+
+      // Set the bounds for the charts
+      var row = 0,
+          col = 0,
+          top = 25,
+          left = 60,
+          inMarg = 95,
+          width = 300,
+          height = 200,
+          totalWidth = parseFloat(svg.attr("width"));
+
+      // Draw a chart for each of the 12 dates
+      quartiles.forEach(function (quartile) {
+
+          // Wrap to the row above
+          if (left + ((col + 1) * (width + inMarg)) > totalWidth) {
+            row += 1;
+            col = 0;
+          }
+
+          // Filter for the month in the iteration
+          var chartData = dimple.filterData(data, "dose_quartile", quartile);
+
+          // Use d3 to draw a text label for the month
+          svg
+            .append("text")
+                .attr("x", left + (col * (width + inMarg)) + (width / 2))
+                .attr("y", top + (row * (height + inMarg)) + (height / 2) + 12)
+                .style("font-family", "sans-serif")
+                .style("text-anchor", "middle")
+                .style("font-size", "28px")
+                .style("opacity", 0.2)
+                .text(chartData[0]["dose_quartile"]);
+
+          // Create a chart at the correct point in the trellis
+          var myChart = new dimple.chart(svg, chartData);
+          myChart.setBounds(
+            left + (col * (width + inMarg)),
+            top + (row * (height + inMarg)),
+            width,
+            height);
+
+          // Add x and fix ordering so that all charts are the same
+          var x = myChart.addCategoryAxis("x", "hematocrit_group");
+          x.addOrderRule(["< 30%","30% - < 33%", "33% - < 36%", "36% - < 39%",">= <39%"]);
+          x.title = "Hematocrit Group";
+          // Add y and fix scale so that all charts are the same
+          var y = myChart.addMeasureAxis("y", "mortality_rate");
+          y.overrideMax = 550;
+          y.title = "Mortality Rate (%)";
+
+          // Draw the bars.  Passing null here would draw all bars with
+          // the same color.  Passing owner second colors by owner, which
+          // is normally bad practice in a bar chart but works in a trellis.
+          // Month is only passed here so that it shows in the tooltip.
+          myChart.addSeries(["dose_quartile", "hematocrit_group"], dimple.plot.bar);
+
+          // Draw the chart
+          myChart.draw();
+
+          // Move to the next column
+          col += 1;
+
+      }, this);
+    });
+  </script>
+</html>
